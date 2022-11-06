@@ -18,7 +18,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
     function verifyToken(req , res, next){
         const authToken = req.headers.authtoken;
-        console.log(authToken);
+        // console.log(authToken);
         if(!authToken){
             return res.status(401).send({message: 'unauthorized access'});
         }
@@ -37,25 +37,30 @@ async function run(){
 
         app.post('/jwt',(req,res)=>{
             const user = req.body;
+
             console.log(user);
             const token = jwt.sign(user, process.env.SECRET_KEY)
-            console.log(token);
-            res.send(token);
+            // console.log(token);
+            res.send({token});
         })
 
         const Products = client.db('amarBazzar').collection('products');
 
         app.get('/products',verifyToken, async(req,res)=>{
+            const perPage = Number(req.query.perPage);
+            const currentPage = Number(req.query.currentPage);
+            console.log(perPage,currentPage);
             const query = {};
             const curse = Products.find(query)
-            const products =await curse.toArray();
+            const products =await curse.skip(perPage*currentPage).limit(perPage).toArray();
+            const count = await Products.estimatedDocumentCount()
             console.log(products);
-            res.send(products);
+            res.send({products,count});
            
         })
         app.post('/products',async(req,res)=>{
             const products =await Products.insertOne(req.body)
-            console.log(products);
+            // console.log(products);
             res.send(products);
            
         })
@@ -70,7 +75,7 @@ async function run(){
                 price: user.price,
                 photoLink : user.photoLink
             }})
-            console.log(products);
+            // console.log(products);
             res.send(products);
            
         })
@@ -78,7 +83,7 @@ async function run(){
             const id = req.params.id;
             const query ={_id: ObjectId(id)}
             const products =await Products.deleteOne(query)
-            console.log(products);
+            // console.log(products);
             res.send(products);
            
         })
